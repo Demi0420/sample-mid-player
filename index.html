@@ -128,10 +128,26 @@
 
           // 加载并播放 MIDI 文件
           var midiFilePath = "music-score-with-whole-background.midi";
-          // 这里直接使用 MIDI.Player.loadFile()，前提是确保文件路径正确
-          MIDI.Player.loadFile(midiFilePath, function () {
-            MIDI.Player.start();
-          });
+          console.log("Attempting to load MIDI file: " + midiFilePath);
+          fetch(midiFilePath)
+              .then(response => {
+                  console.log("Received response for MIDI file.");
+                  if (!response.ok) {
+                      throw new Error("MIDI file not found: " + midiFilePath);
+                  }
+                  return response.blob();
+              })
+              .then(blob => {
+                  console.log("MIDI file loaded successfully. Starting playback...");
+                  MIDI.Player.loadFile(midiFilePath, function () {
+                      console.log("Playback started.");
+                      MIDI.Player.start();
+                  });
+              })
+              .catch(error => {
+                  console.error("Error loading MIDI file:", error);
+                  alert("Failed to load MIDI file. Please check the file path.");
+              });
         },
         onerror: function(error) {
           console.error("MIDI plugin failed to load:", error);
