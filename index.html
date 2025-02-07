@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MIDI Player with Progress Bar</title>
+  <title>MIDI Player with Debug</title>
 
-  <!-- 定义 Base64Binary -->
+  <!-- 定义 Base64Binary（MIDI.js 依赖的全局变量） -->
   <script>
     var Base64Binary = {
       _keyStr: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
@@ -58,7 +58,7 @@
     };
   </script>
 
-  <!-- 使用本地托管的 MIDI.js -->
+  <!-- 加载本地托管的 MIDI.js -->
   <script src="MIDI.min.js"></script>
 
   <style>
@@ -67,10 +67,10 @@
       text-align: center;
       padding: 50px;
     }
-    #playButton {
+    button {
       font-size: 16px;
       padding: 10px 20px;
-      margin-top: 20px;
+      margin: 10px;
       cursor: pointer;
       border: none;
       background-color: #4CAF50;
@@ -110,10 +110,13 @@
 </head>
 <body>
   <h2>Listen to the Music for this photo.</h2>
-  <p>Click the button to play:</p>
+  <p>Click the buttons to test:</p>
   
+  <!-- 播放 MIDI 按钮 -->
   <button id="playButton">Play MIDI</button>
-
+  <!-- 测试播放单音（中音 C）的按钮 -->
+  <button id="testNoteButton">Test Note</button>
+  
   <!-- 进度条 -->
   <div id="progressContainer">
     <div id="progressBar"></div>
@@ -128,10 +131,28 @@
   <p>© 2024 Yao.</p>
 
   <script>
+    // 按钮事件：测试播放一个单音（中音 C，音符 60）
+    document.getElementById("testNoteButton").addEventListener("click", function () {
+      console.log("Test Note clicked");
+      // 确保 MIDI.js 插件已加载后再调用 noteOn/noteOff
+      MIDI.loadPlugin({
+        soundfontUrl: "./", // 从当前目录加载 SoundFont 文件
+        instruments: ["acoustic_grand_piano"],
+        onsuccess: function () {
+          console.log("SoundFont loaded for Test Note.");
+          MIDI.setVolume(0, 127);
+          // 播放中音 C（音符 60），持续 1 秒
+          MIDI.noteOn(0, 60, 127, 0);
+          MIDI.noteOff(0, 60, 1);
+        }
+      });
+    });
+
+    // 播放 MIDI 文件，并更新进度条
     document.getElementById("playButton").addEventListener("click", function () {
       console.log("Play MIDI clicked");
       MIDI.loadPlugin({
-        soundfontUrl: "./",  // 从当前目录加载 SoundFont 文件（确保 acoustic_grand_piano-mp3.js 已上传）
+        soundfontUrl: "./", // 从当前目录加载 SoundFont 文件（确保 acoustic_grand_piano-mp3.js 已上传）
         instruments: ["acoustic_grand_piano"],
         onsuccess: function () {
           console.log("MIDI plugin loaded successfully.");
@@ -139,14 +160,13 @@
           
           // 尝试恢复音频上下文（部分浏览器可能需要）
           if (MIDI.Player.context && MIDI.Player.context.state === 'suspended') {
-              MIDI.Player.context.resume().then(function() {
-                  console.log("Audio context resumed.");
-              });
+            MIDI.Player.context.resume().then(function() {
+              console.log("Audio context resumed.");
+            });
           }
           
           var midiFilePath = "music-score-with-whole-background.midi";
           console.log("Attempting to load MIDI file: " + midiFilePath);
-          // 使用 fetch() 加载 MIDI 文件
           fetch(midiFilePath)
             .then(response => {
               console.log("Received response for MIDI file.");
@@ -157,7 +177,6 @@
             })
             .then(blob => {
               console.log("MIDI file loaded successfully. Starting playback...");
-              // 加载并播放 MIDI 文件
               MIDI.Player.loadFile(midiFilePath, function () {
                 console.log("Playback started.");
                 MIDI.Player.start();
@@ -165,9 +184,15 @@
               
               // 添加监听器更新进度条
               MIDI.Player.addListener(function(data) {
-                // data.now 为当前播放时间，data.end 为 MIDI 总时长（单位：秒）
-                var progressPercent = (data.now / data.end) * 100;
-                document.getElementById("progressBar").style.width = progressPercent + "%";
+                // data.now：当前播放时间，data.end：总时长（单位：秒）
+                // 如果 data.end 为 0，则说明 MIDI 文件可能没有正确解析出时长
+                if (data.end > 0) {
+                  var progressPercent = (data.now / data.end) * 100;
+                  document.getElementById("progressBar").style.width = progressPercent + "%";
+                  console.log("Progress: " + progressPercent.toFixed(2) + "%");
+                } else {
+                  console.log("data.end is 0, unable to update progress.");
+                }
               });
             })
             .catch(error => {
