@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MIDI Player</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/MIDI.js/0.3.2/MIDI.min.js"></script>
+    <style>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,12 +34,8 @@
 <body>
     <h2>Listen to the Music for this photo.</h2>
     <p>Click the play button to listen:</p>
+    <button id="playButton">Play MIDI</button>
     
-    <audio controls>
-        <source src="music-score-with-whole-background.midi" type="audio/midi">
-        Your browser does not support MIDI playback.
-    </audio>
-
     <!-- 两张并排显示的图片 -->
     <div class="image-container">
         <img src="sample_image_8737.jpg" alt="First Image">
@@ -45,5 +43,20 @@
     </div>
 
     <p>© 2024 Yao.</p>
+    <script>
+        document.getElementById("playButton").addEventListener("click", function () {
+            MIDI.loadPlugin({
+                soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/",
+                instruments: ["acoustic_grand_piano"],
+                onsuccess: function () {
+                    console.log("MIDI plugin loaded.");
+                    MIDI.setVolume(0, 127);
+                    MIDI.Player.loadFile("music-score-with-whole-background.midi", function () {
+                        MIDI.Player.start();
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
