@@ -1,91 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIDI Player</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIDI Player</title>
 
-    <!-- 加载本地托管的 MIDI.js -->
-    <script src="MIDI.min.js"></script>
+  <!-- 使用本地托管的 MIDI.js -->
+  <script src="MIDI.min.js"></script>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
-        }
-        .image-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px; /* 控制图片之间的间距 */
-            margin-top: 30px;
-        }
-        .image-container img {
-            width: 45%;
-            max-width: 300px;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
-        }
-        #playButton {
-            font-size: 16px;
-            padding: 10px 20px;
-            margin-top: 20px;
-            cursor: pointer;
-            border: none;
-            background-color: #4CAF50;
-            color: white;
-            border-radius: 5px;
-        }
-    </style>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    #playButton {
+      font-size: 16px;
+      padding: 10px 20px;
+      margin-top: 20px;
+      cursor: pointer;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      border-radius: 5px;
+    }
+    .image-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px; /* 控制图片之间的间距 */
+      margin-top: 30px;
+    }
+    .image-container img {
+      width: 300px;  /* 固定统一宽度 */
+      height: 300px; /* 固定统一高度 */
+      object-fit: cover; /* 保持图片比例，超出部分裁剪 */
+      border-radius: 8px; /* 可选，增加圆角 */
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2); /* 可选，增加阴影 */
+    }
+  </style>
 </head>
 <body>
-    <h2>Listen to the Music for this photo.</h2>
-    <p>Click the button to play:</p>
-    
-    <button id="playButton">Play MIDI</button>
+  <h2>Listen to the Music for this photo.</h2>
+  <p>Click the button to play:</p>
+  
+  <!-- 播放 MIDI 的按钮 -->
+  <button id="playButton">Play MIDI</button>
 
-    <!-- 两张并排显示的图片 -->
-    <div class="image-container">
-        <img src="sample_image_8737.jpg" alt="First Image">
-        <img src="music-score-with-whole-background.png" alt="Second Image">
-    </div>
+  <!-- 两张并排显示的图片 -->
+  <div class="image-container">
+    <img src="sample_image_8737.jpg" alt="First Image">
+    <img src="music-score-with-whole-background.png" alt="Second Image">
+  </div>
 
-    <p>© 2024 Yao.</p>
+  <p>© 2024 Yao.</p>
 
-    <script>
-        document.getElementById("playButton").addEventListener("click", function () {
-            MIDI.loadPlugin({
-                soundfontUrl: "./",  // 本地托管的 SoundFont 目录
-                instruments: ["acoustic_grand_piano"],
-                onsuccess: function () {
-                    console.log("MIDI plugin loaded successfully.");
-                    
-                    // 确保你的 MIDI 文件路径正确
-                    var midiFilePath = "music-score-with-whole-background.midi";
+  <script>
+    // 当点击按钮时加载 MIDI 插件并播放 MIDI 文件
+    document.getElementById("playButton").addEventListener("click", function () {
+      MIDI.loadPlugin({
+        // 指定 SoundFont 文件存放目录为当前目录，
+        // 这样 MIDI.js 会尝试加载当前目录下的 "acoustic_grand_piano-mp3.js"
+        soundfontUrl: "./", 
+        instruments: ["acoustic_grand_piano"],
+        onsuccess: function () {
+          console.log("MIDI plugin loaded successfully.");
+          MIDI.setVolume(0, 127);
 
-                    fetch(midiFilePath)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error("MIDI file not found: " + midiFilePath);
-                            }
-                            return response.blob();
-                        })
-                        .then(blob => {
-                            console.log("MIDI file loaded successfully.");
-                            MIDI.setVolume(0, 127);
-                            MIDI.Player.loadFile(midiFilePath, function () {
-                                MIDI.Player.start();
-                            });
-                        })
-                        .catch(error => {
-                            console.error("Error loading MIDI file:", error);
-                            alert("Failed to load MIDI file. Please check the file path.");
-                        });
-                }
-            });
-        });
-    </script>
+          // 加载并播放 MIDI 文件
+          var midiFilePath = "music-score-with-whole-background.midi";
+          // 这里直接使用 MIDI.Player.loadFile()，前提是确保文件路径正确
+          MIDI.Player.loadFile(midiFilePath, function () {
+            MIDI.Player.start();
+          });
+        },
+        onerror: function(error) {
+          console.error("MIDI plugin failed to load:", error);
+        }
+      });
+    });
+  </script>
 </body>
 </html>
