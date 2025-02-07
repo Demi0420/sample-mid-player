@@ -119,6 +119,13 @@
           console.log("MIDI plugin loaded successfully.");
           MIDI.setVolume(0, 127);
 
+          // 尝试恢复音频上下文（部分浏览器可能需要）
+          if (MIDI.Player.context && MIDI.Player.context.state === 'suspended') {
+            MIDI.Player.context.resume().then(function() {
+              console.log("Audio context resumed");
+            });
+          }
+
           // 加载并播放 MIDI 文件
           var midiFilePath = "music-score-with-whole-background.midi";
           // 这里直接使用 MIDI.Player.loadFile()，前提是确保文件路径正确
