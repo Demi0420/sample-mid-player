@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MIDI Player with Debug</title>
+  <title>MIDI Player with Interactive Progress Bar</title>
 
-  <!-- 定义 Base64Binary（MIDI.js 依赖的全局变量） -->
+  <!-- 定义 Base64Binary，MIDI.js 依赖的全局变量 -->
   <script>
     var Base64Binary = {
       _keyStr: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
@@ -17,7 +17,7 @@
       },
       removePaddingChars: function(input) {
           var lkey = this._keyStr.indexOf(input.charAt(input.length - 1));
-          if(lkey === 64) {
+          if (lkey === 64) {
               return input.substring(0, input.length - 1);
           }
           return input;
@@ -37,11 +37,11 @@
           input = this.removePaddingChars(input);
           input = this.removePaddingChars(input);
           var i, j = 0;
-          for(i = 0; i < input.length; i += 4) {
+          for (i = 0; i < input.length; i += 4) {
               var enc1 = this._keyStr.indexOf(input.charAt(i));
-              var enc2 = this._keyStr.indexOf(input.charAt(i+1));
-              var enc3 = this._keyStr.indexOf(input.charAt(i+2));
-              var enc4 = this._keyStr.indexOf(input.charAt(i+3));
+              var enc2 = this._keyStr.indexOf(input.charAt(i + 1));
+              var enc3 = this._keyStr.indexOf(input.charAt(i + 2));
+              var enc4 = this._keyStr.indexOf(input.charAt(i + 3));
               var chr1 = (enc1 << 2) | (enc2 >> 4);
               var chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
               var chr3 = ((enc3 & 3) << 6) | enc4;
@@ -65,7 +65,7 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 50px;
+      padding: 20px;
     }
     button {
       font-size: 16px;
@@ -82,73 +82,78 @@
       justify-content: center;
       align-items: center;
       gap: 20px;
-      margin-top: 30px;
+      margin-top: 20px;
     }
     .image-container img {
       width: auto;
       height: 300px;
       object-fit: cover;
       border-radius: 8px;
-      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
     }
-    /* 进度条容器 */
-    #progressContainer {
-      width: 80%;
-      height: 20px;
-      background-color: #ddd;
+    /* 进度条与时间显示的容器 */
+    #playerControls {
       margin: 20px auto;
-      border-radius: 10px;
-      overflow: hidden;
+      width: 80%;
+      display: flex;
+      align-items: center;
     }
-    /* 实际进度条 */
-    #progressBar {
-      width: 0;
-      height: 100%;
-      background-color: #4CAF50;
+    #currentTime, #totalTime {
+      font-size: 14px;
+      width: 50px;
+    }
+    #progressSlider {
+      flex: 1;
+      margin: 0 10px;
     }
   </style>
 </head>
 <body>
-  <h2>Listen to the Music for this photo.</h2>
-  <p>Click the buttons to test:</p>
-  
-  <!-- 播放 MIDI 按钮 -->
+  <h2>MIDI Player with Interactive Progress Bar</h2>
+  <!-- 播放按钮 -->
   <button id="playButton">Play MIDI</button>
-  <!-- 测试播放单音（中音 C）的按钮 -->
+  <!-- 测试单音按钮 -->
   <button id="testNoteButton">Test Note</button>
   
-  <!-- 进度条 -->
-  <div id="progressContainer">
-    <div id="progressBar"></div>
+  <!-- 进度条及时间显示 -->
+  <div id="playerControls">
+    <span id="currentTime">0:00</span>
+    <input type="range" id="progressSlider" min="0" max="100" value="0">
+    <span id="totalTime">0:00</span>
   </div>
-
+  
   <!-- 两张并排显示的图片 -->
   <div class="image-container">
-    <img src="sample_image_8737.jpg" alt="First Image">
-    <img src="music-score-with-whole-background.png" alt="Second Image">
+    <img src="sample_image_8737.jpg" alt="Image 1">
+    <img src="music-score-with-whole-background.png" alt="Image 2">
   </div>
-
+  
   <p>© 2024 Yao.</p>
-
+  
   <script>
-    // 按钮事件：测试播放一个单音（中音 C，音符 60）
+    // 格式化秒数为 mm:ss
+    function formatTime(seconds) {
+      var minutes = Math.floor(seconds / 60);
+      var secs = Math.floor(seconds % 60);
+      return minutes + ":" + (secs < 10 ? "0" + secs : secs);
+    }
+    
+    // Test Note 按钮：播放中音 C（音符 60）
     document.getElementById("testNoteButton").addEventListener("click", function () {
       console.log("Test Note clicked");
-      // 确保 MIDI.js 插件已加载后再调用 noteOn/noteOff
       MIDI.loadPlugin({
-        soundfontUrl: "./", // 从当前目录加载 SoundFont 文件
+        soundfontUrl: "./",
         instruments: ["acoustic_grand_piano"],
         onsuccess: function () {
           console.log("SoundFont loaded for Test Note.");
           MIDI.setVolume(0, 127);
-          // 播放中音 C（音符 60），持续 1 秒
           MIDI.noteOn(0, 60, 127, 0);
           MIDI.noteOff(0, 60, 1);
         }
       });
     });
-
-    // 播放 MIDI 文件，并更新进度条
+    
+    // Play MIDI 按钮：加载并播放 MIDI 文件，同时更新进度条
     document.getElementById("playButton").addEventListener("click", function () {
       console.log("Play MIDI clicked");
       MIDI.loadPlugin({
@@ -179,19 +184,21 @@
               console.log("MIDI file loaded successfully. Starting playback...");
               MIDI.Player.loadFile(midiFilePath, function () {
                 console.log("Playback started.");
+                // 若 MIDI.Player.data.end 可用，则显示总时长
+                if (MIDI.Player.data && MIDI.Player.data.end) {
+                  document.getElementById("totalTime").textContent = formatTime(MIDI.Player.data.end);
+                }
                 MIDI.Player.start();
               });
               
-              // 添加监听器更新进度条
+              // 添加监听器更新进度条及时间显示
               MIDI.Player.addListener(function(data) {
-                // data.now：当前播放时间，data.end：总时长（单位：秒）
-                // 如果 data.end 为 0，则说明 MIDI 文件可能没有正确解析出时长
                 if (data.end > 0) {
                   var progressPercent = (data.now / data.end) * 100;
-                  document.getElementById("progressBar").style.width = progressPercent + "%";
+                  document.getElementById("progressSlider").value = progressPercent;
+                  document.getElementById("currentTime").textContent = formatTime(data.now);
+                  document.getElementById("totalTime").textContent = formatTime(data.end);
                   console.log("Progress: " + progressPercent.toFixed(2) + "%");
-                } else {
-                  console.log("data.end is 0, unable to update progress.");
                 }
               });
             })
@@ -204,6 +211,15 @@
           console.error("MIDI plugin failed to load:", error);
         }
       });
+    });
+    
+    // 允许拖动进度条跳转播放位置
+    document.getElementById("progressSlider").addEventListener("input", function() {
+      var percent = this.value / 100;
+      console.log("Jumping to: " + percent);
+      if (MIDI.Player && typeof MIDI.Player.jumpTo === 'function') {
+        MIDI.Player.jumpTo(percent);
+      }
     });
   </script>
 </body>
