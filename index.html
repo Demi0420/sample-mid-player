@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MIDI Player</title>
+  <title>MIDI Player with Progress Bar</title>
 
-    <!-- 定义 Base64Binary 变量 -->
+  <!-- 定义 Base64Binary -->
   <script>
     var Base64Binary = {
       _keyStr: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
@@ -57,6 +57,7 @@
       }
     };
   </script>
+
   <!-- 使用本地托管的 MIDI.js -->
   <script src="MIDI.min.js"></script>
 
@@ -80,24 +81,43 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 20px; /* 控制图片之间的间距 */
+      gap: 20px;
       margin-top: 30px;
     }
     .image-container img {
-      width: auto;  
-      height: 300px; /* 固定统一高度 */
+      width: auto;
+      height: 300px;
       object-fit: cover;
-      border-radius: 8px; /* 可选，增加圆角 */
-      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2); /* 可选，增加阴影 */
+      border-radius: 8px;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    /* 进度条容器 */
+    #progressContainer {
+      width: 80%;
+      height: 20px;
+      background-color: #ddd;
+      margin: 20px auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    /* 实际进度条 */
+    #progressBar {
+      width: 0;
+      height: 100%;
+      background-color: #4CAF50;
     }
   </style>
 </head>
 <body>
   <h2>Listen to the Music for this photo.</h2>
-  <p>Click the button to play</p>
+  <p>Click the button to play:</p>
   
-  <!-- 播放 MIDI 的按钮 -->
   <button id="playButton">Play MIDI</button>
+
+  <!-- 进度条 -->
+  <div id="progressContainer">
+    <div id="progressBar"></div>
+  </div>
 
   <!-- 两张并排显示的图片 -->
   <div class="image-container">
@@ -108,46 +128,52 @@
   <p>© 2024 Yao.</p>
 
   <script>
-    // 当点击按钮时加载 MIDI 插件并播放 MIDI 文件
     document.getElementById("playButton").addEventListener("click", function () {
+      console.log("Play MIDI clicked");
       MIDI.loadPlugin({
-        // 指定 SoundFont 文件存放目录为当前目录，
-        // 这样 MIDI.js 会尝试加载当前目录下的 "acoustic_grand_piano-mp3.js"
-        soundfontUrl: "./", 
+        soundfontUrl: "./",  // 从当前目录加载 SoundFont 文件（确保 acoustic_grand_piano-mp3.js 已上传）
         instruments: ["acoustic_grand_piano"],
         onsuccess: function () {
           console.log("MIDI plugin loaded successfully.");
           MIDI.setVolume(0, 127);
-
+          
           // 尝试恢复音频上下文（部分浏览器可能需要）
           if (MIDI.Player.context && MIDI.Player.context.state === 'suspended') {
-            MIDI.Player.context.resume().then(function() {
-              console.log("Audio context resumed");
-            });
+              MIDI.Player.context.resume().then(function() {
+                  console.log("Audio context resumed.");
+              });
           }
-
-          // 加载并播放 MIDI 文件
+          
           var midiFilePath = "music-score-with-whole-background.midi";
           console.log("Attempting to load MIDI file: " + midiFilePath);
+          // 使用 fetch() 加载 MIDI 文件
           fetch(midiFilePath)
-              .then(response => {
-                  console.log("Received response for MIDI file.");
-                  if (!response.ok) {
-                      throw new Error("MIDI file not found: " + midiFilePath);
-                  }
-                  return response.blob();
-              })
-              .then(blob => {
-                  console.log("MIDI file loaded successfully. Starting playback...");
-                  MIDI.Player.loadFile(midiFilePath, function () {
-                      console.log("Playback started.");
-                      MIDI.Player.start();
-                  });
-              })
-              .catch(error => {
-                  console.error("Error loading MIDI file:", error);
-                  alert("Failed to load MIDI file. Please check the file path.");
+            .then(response => {
+              console.log("Received response for MIDI file.");
+              if (!response.ok) {
+                throw new Error("MIDI file not found: " + midiFilePath);
+              }
+              return response.blob();
+            })
+            .then(blob => {
+              console.log("MIDI file loaded successfully. Starting playback...");
+              // 加载并播放 MIDI 文件
+              MIDI.Player.loadFile(midiFilePath, function () {
+                console.log("Playback started.");
+                MIDI.Player.start();
               });
+              
+              // 添加监听器更新进度条
+              MIDI.Player.addListener(function(data) {
+                // data.now 为当前播放时间，data.end 为 MIDI 总时长（单位：秒）
+                var progressPercent = (data.now / data.end) * 100;
+                document.getElementById("progressBar").style.width = progressPercent + "%";
+              });
+            })
+            .catch(error => {
+              console.error("Error loading MIDI file:", error);
+              alert("Failed to load MIDI file. Please check the file path.");
+            });
         },
         onerror: function(error) {
           console.error("MIDI plugin failed to load:", error);
