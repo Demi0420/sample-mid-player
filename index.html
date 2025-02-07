@@ -4,16 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MIDI Player</title>
-    <script src="MIDI.min.js"></script>
-    <style>
+
+    <!-- 使用可靠的 MIDI.js -->
+    <script src="https://gleitz.github.io/midi-js-soundfonts/MIDI.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
-        }
-        audio {
-            margin-top: 20px;
         }
         .image-container {
             display: flex;
@@ -29,13 +28,24 @@
             border-radius: 8px; /* 可选，增加圆角 */
             box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2); /* 可选，增加阴影 */
         }
+        #playButton {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <h2>Listen to the Music for this photo.</h2>
     <p>Click the play button to listen:</p>
-    <button id="playButton">Play MIDI</button>
     
+    <button id="playButton">Play MIDI</button>
+
     <!-- 两张并排显示的图片 -->
     <div class="image-container">
         <img src="sample_image_8737.jpg" alt="First Image">
@@ -43,17 +53,36 @@
     </div>
 
     <p>© 2024 Yao.</p>
+
     <script>
         document.getElementById("playButton").addEventListener("click", function () {
             MIDI.loadPlugin({
-                soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/",
+                soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/acoustic_grand_piano-mp3.js",
                 instruments: ["acoustic_grand_piano"],
                 onsuccess: function () {
-                    console.log("MIDI plugin loaded.");
-                    MIDI.setVolume(0, 127);
-                    MIDI.Player.loadFile("music-score-with-whole-background.midi", function () {
-                        MIDI.Player.start();
-                    });
+                    console.log("MIDI plugin loaded successfully.");
+                    
+                    // 确保你的 MIDI 文件路径正确
+                    var midiFilePath = "music-score-with-whole-background.midi";
+
+                    fetch(midiFilePath)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error("MIDI file not found: " + midiFilePath);
+                            }
+                            return response.blob();
+                        })
+                        .then(blob => {
+                            console.log("MIDI file loaded successfully.");
+                            MIDI.setVolume(0, 127);
+                            MIDI.Player.loadFile(midiFilePath, function () {
+                                MIDI.Player.start();
+                            });
+                        })
+                        .catch(error => {
+                            console.error("Error loading MIDI file:", error);
+                            alert("Failed to load MIDI file. Please check the file path.");
+                        });
                 }
             });
         });
