@@ -9,9 +9,10 @@
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 20px;
-      }
-      .image-container {
+    }
+    .image-container {
       display: flex;
+      flex-direction: row; /* 默认横排 */
       justify-content: center;
       align-items: center;
       gap: 20px;
@@ -23,6 +24,12 @@
       object-fit: cover;
       border-radius: 8px;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+    }
+    /* 当屏幕宽度小于600px时，图片容器改为竖排 */
+    @media (max-width: 600px) {
+      .image-container {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
